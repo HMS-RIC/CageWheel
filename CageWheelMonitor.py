@@ -157,10 +157,14 @@ def newLogEntry():
     prevLogTime = currLogTime
 
     # compute wheel speeds for current interval
-    currentClicks = clicks 
+    currentClicks = np.array(clicks)
+    # print(currentClicks)
     clicks[:] = 0 # reset to 0 for next interval
-    revsPerSec = clicks / float(CLICKS_PER_REVOLUTION) / interval
+    # print(currentClicks)
+    revsPerSec = currentClicks / float(CLICKS_PER_REVOLUTION) / interval
     metersPerSec = revsPerSec / METERS_PER_REVOLUTION
+
+    # print(currentClicks)
 
     # write activityPercent to log
     logData(revsPerSec)
@@ -172,7 +176,7 @@ def newLogEntry():
     outputString = dateString
     for n in xrange(num_active_pins):
         mouse = miceInfo[n]
-        outputString += '  |  {} {:4.1f}%'.format(mouse['name'], revsPerSec[n])
+        outputString += '  |  {} {:4.1f} rev/sec'.format(mouse['name'], revsPerSec[n])
 
     print(outputString)
     # print(logCount, map(str, activityPercent))
@@ -254,7 +258,7 @@ def createLogFiles(miceInfo):
 
 def newLogFile(mouse, dateString, dir):
     name = mouse['name']
-    logFile = open(os.path.join(dir, "{}_{}.AWD".format(name, dateString)), "w", 1) # open for writing w/line buffering
+    logFile = open(os.path.join(dir, "{}_{}.log".format(name, dateString)), "w", 1) # open for writing w/line buffering
     return logFile
 
 def addHeaders(logFile, mouse, dt):
@@ -265,9 +269,8 @@ def addHeaders(logFile, mouse, dt):
     logFile.write("{}\n".format(dt.strftime('%d-%b-%Y').lower()))
     # 3 START TIME (24 hour) Always 2 digits for both hour and minute, as in 04:20
     logFile.write("{}\n".format(dt.strftime('%H:%M')))
-    # 4 INTERVAL (sample interval, or the time between data points, in minutes
-    # multiplied by 4)
-    logFile.write("{}\n".format(int(loggingInterval_sec * 4 * 60)))
+    # 4 INTERVAL (sample interval, or the time between data points, in sec)
+    logFile.write("{}\n".format(int(loggingInterval_sec)))
     # 5 Any number (place holder) - cage number
     logFile.write("cage-{}\n".format(mouse['cage']))
     # 6 Any number (place holder) - strain
