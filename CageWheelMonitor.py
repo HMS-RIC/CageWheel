@@ -50,6 +50,8 @@ def cleanup():
     global callbacks
     for cb in callbacks:
         cb.cancel()
+    global pi
+    pi.stop()
 
     # close log file
     closeAllLogs()
@@ -99,7 +101,7 @@ def runCageWheelMonitor():
             pi.set_mode(pin, gpio.INPUT)
             pi.set_pull_up_down(pin, gpio.PUD_DOWN)
             pi.set_glitch_filter(pin, GLITCH_FILTER) # in us
-            callbacks.append(pi.callback(pin, gpio.EITHER_EDGE, edgeCallback))
+            callbacks.append(pi.callback(pin, gpio.RISING_EDGE, edgeCallback))
 
 
     # start collecting data
@@ -120,24 +122,9 @@ def runCageWheelMonitor():
 
 
 def edgeCallback(channel, level, ticks):
-    if level > 0:
-        global clicks
-        clicks[cages.index(PINS.index(channel)+1)] += 1 ## TODO this is too messy
+    global clicks
+    clicks[cages.index(PINS.index(channel)+1)] += 1 ## TODO this is too messy
     # print(PINS.index(channel), level) # for debugging
-
-
-# def newSample():
-#     global samples
-#     global cages
-#     global num_active_pins
-#     s.enter(1./samplingRate, 1, newSample, ()) # setup next sample
-#     samples += 1
-#     for i in xrange(num_active_pins):
-#         if not RUNNING_ON_PI:
-#             clicks[i] += np.round(np.random.rand())
-#         else:    
-#             clicks[i] += pi.read(active_pins[i])
-
 
 def newLogEntry():
     global samples
