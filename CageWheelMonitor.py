@@ -28,9 +28,6 @@ METERS_PER_REVOLUTION = 0.39 # measured diameter is ~0.124 m
 # setup for timing
 loggingInterval_sec = 10 # in seconds
 
-# data collection
-logTenthsOfPercent = True   # if True: 100% is represented as 1000 in log files
-                            #       otherwise save percentages (e.g. 100% = 100)
 
 ######### DO NOT CHANGE VALUES BELOW THIS LINE #########
 
@@ -175,8 +172,8 @@ def newLogEntry():
 ## functions for user input/setup        
 
 def getMiceInfo():
-    print("Mouse Activity Logger v1.0")
-    print("==========================")
+    print("Mouse Running Wheel Monitor v1.0")
+    print("================================")
     print("")
     print("You can monitor up to {} cages.".format(NUM_CAGES))
 
@@ -277,11 +274,8 @@ def logData(dataArray):
         logFile = logFiles[i]
         if np.isnan(dataArray[i]):
             dataArray[i] = -1 
-        if logTenthsOfPercent:
-            logFile.write('{}\n'.format(int(dataArray[i]*10)))
-        else:
-            logFile.write('{}\n'.format(int(np.round(dataArray[i]))))
-
+        logFile.write('{:.2f}\n'.format(dataArray[i]))
+    
 
 
 
