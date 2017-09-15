@@ -16,20 +16,26 @@ except:
 
 ######### USER MODIFIABLE PARAMETERS #########
 
-# setup for gpio
-NUM_CAGES = 8
-PINS = [4, 17, 27, 22, 14, 15, 18, 23] # don't use pins 2 or 3 as they are pulled up
-GLITCH_FILTER = 100 # in us
-
 # wheel & sensor
 CLICKS_PER_REVOLUTION = 2
 METERS_PER_REVOLUTION = 0.39 # measured diameter is ~0.124 m
 
-# setup for timing
-loggingInterval_sec = 10 # in seconds
+# setup for timing & logging
+loggingInterval_sec   = 10  # in seconds
+logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into 
+                            #            multiple files of this duration (or shorter)
 
 
 ######### DO NOT CHANGE VALUES BELOW THIS LINE #########
+
+# setup for gpio
+GLITCH_FILTER = 100 # in us
+# List of all usable GPIO pins aside from 2 or 3 as they are pulled up
+PINS = [4, 14, 15, 17, 18, 27, 22, 23, 24, 10, 9, 25, 11, 8, 7] 
+if (RUNNING_ON_PI and (gpio.get_hardware_revision() >= 16)):
+    # more pins on later version of RasPi
+    PINS = PINS + [5, 6, 12, 13, 19, 16, 26, 20, 21]
+MAX_NUM_CAGES = len(PINS)
 
 # setup for gpio
 callbacks = []
@@ -38,7 +44,7 @@ callbacks = []
 logFiles = []
 
 # create scheduler
-s = sched.scheduler(time.time, time.sleep)
+scheduler = sched.scheduler(time.time, time.sleep)
 
 
 # cleanup
@@ -76,7 +82,12 @@ def runCageWheelMonitor():
     global miceInfo, cages
     miceInfo, cages = getMiceInfo()
 
-    createLogFiles(miceInfo)
+    # setup logging
+    global startTime, logCount, logFileCount
+    startTime = time.time()
+    logCount = 0
+    logFileCount = 0
+    startLogging(miceInfo)
 
     # setup gpio pins
     if RUNNING_ON_PI:
@@ -102,20 +113,16 @@ def runCageWheelMonitor():
 
 
     # start collecting data
-    global startTime, logCount
-    startTime = time.time()
-    logCount = 0
-
     print('==========')
     print('')
     print('Running...')
     print('')
 
-    #s.enter(1./samplingRate, 2, newSample, ()) # can be replaced by calling 'newSample()'
-    s.enterabs(startTime + loggingInterval_sec, 1, newLogEntry, ()) 
+    global scheduler
+    scheduler.enterabs(startTime + loggingInterval_sec, 1, newLogEntry, ()) 
 
     # run until quit/^C
-    s.run()
+    scheduler.run()
 
 
 def edgeCallback(channel, level, ticks):
@@ -129,9 +136,10 @@ def newLogEntry():
     global logCount
     global prevLogTime
     global clicks
+    global scheduler
 
     logCount += 1
-    s.enterabs(startTime + (logCount+1)*loggingInterval_sec, 1, newLogEntry, ()) 
+    scheduler.enterabs(startTime + (logCount+1)*loggingInterval_sec, 1, newLogEntry, ()) 
 
     # compute inter-log interval
     currLogTime = time.time()
@@ -175,11 +183,11 @@ def getMiceInfo():
     print("Mouse Running Wheel Monitor v1.0")
     print("================================")
     print("")
-    print("You can monitor up to {} cages.".format(NUM_CAGES))
+    print("You can monitor up to {} cages.".format(MAX_NUM_CAGES))
 
     mice = []
     cages = []
-    for mouseNum in xrange(NUM_CAGES):
+    for mouseNum in xrange(MAX_NUM_CAGES):
         print("Mouse {}:".format(mouseNum+1))
         name = raw_input("- Name: ")
         sex = raw_input("- Sex: ")
@@ -189,10 +197,10 @@ def getMiceInfo():
             try:
                 cage = int(cage)
             except:
-                print("  ** You must enter a number from 1 to {}. **".format(NUM_CAGES))
+                print("  ** You must enter a number from 1 to {}. **".format(MAX_NUM_CAGES))
                 continue
-            if not (0<cage<=NUM_CAGES):
-                print("  ** You must enter a number from 1 to {}. **".format(NUM_CAGES))
+            if not (0<cage<=MAX_NUM_CAGES):
+                print("  ** You must enter a number from 1 to {}. **".format(MAX_NUM_CAGES))
                 continue
             if cage in cages:
                 print("  ** Cage {} already in use. **".format(cage))
@@ -206,7 +214,7 @@ def getMiceInfo():
         mouse['strain'] = strain
         mice.append(mouse)
         cages.append(cage)
-        if mouseNum < NUM_CAGES-1 :
+        if mouseNum < MAX_NUM_CAGES-1 :
             yn = '#'
             while not (len(yn) == 0 or 
                         yn.startswith('Y') or
@@ -221,13 +229,17 @@ def getMiceInfo():
 
 
 ## functions for data logging...
-logFile = None
+
+def startLogging(miceInfo):
+    global startTime, scheduler, logFileCount
+    createLogFiles(miceInfo)
+    # schedule the next log file chunk to occur <logFileDuration_hours> from now 
+    logFileCount += 1
+    scheduler.enterabs(startTime + (logFileCount * logFileDuration_hours * 3600), 1, startLogging, (miceInfo)) 
+
+logFiles = []
 def createLogFiles(miceInfo):
-    global logFiles
-    if logFiles:
-        for file in logFiles:
-            file.close()
-    logFiles = [];
+    closeAllLogs()
     dir = os.path.expanduser("~/logs/")
     if not os.path.exists(dir):
         os.mkdir(dir)
@@ -235,6 +247,7 @@ def createLogFiles(miceInfo):
     # baseName = logName
     dt = datetime.datetime.now()
     dateString = dt.strftime('%Y-%m-%d_%H%M')
+    global logFiles
     for mouse in miceInfo:
         logFile = newLogFile(mouse, dateString, dir)
         logFiles.append(logFile)
@@ -267,6 +280,7 @@ def closeAllLogs():
     global logFiles
     for logFile in logFiles:
         logFile.close()
+    logFiles = []
 
 def logData(dataArray):
     global logFiles, num_active_pins
