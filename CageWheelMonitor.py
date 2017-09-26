@@ -30,11 +30,7 @@ logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into
 
 # setup for gpio
 GLITCH_FILTER = 100 # in us
-# List of all usable GPIO pins aside from 2 or 3 as they are pulled up
 PINS = [4, 14, 15, 17, 18, 27, 22, 23, 24, 10, 9, 25, 11, 8, 7] 
-if (RUNNING_ON_PI and (gpio.get_hardware_revision() >= 16)):
-    # more pins on later version of RasPi
-    PINS = PINS + [5, 6, 12, 13, 19, 16, 26, 20, 21]
 MAX_NUM_CAGES = len(PINS)
 
 # setup for gpio
@@ -46,6 +42,13 @@ logFiles = []
 # create scheduler
 scheduler = sched.scheduler(time.time, time.sleep)
 
+def setupPins():
+    # List of all usable GPIO pins aside from 2 or 3 as they are pulled up
+    global PINS, RUNNING_ON_PI, pi, MAX_NUM_CAGES 
+    if (RUNNING_ON_PI and (pi.get_hardware_revision() >= 16)):
+        # more pins on later version of RasPi
+        PINS = PINS + [5, 6, 12, 13, 19, 16, 26, 20, 21]
+    MAX_NUM_CAGES = len(PINS)
 
 # cleanup
 def cleanup():
@@ -94,6 +97,8 @@ def runCageWheelMonitor():
         startGPIODaemon()
         global pi
         pi = gpio.pi()
+        setupPins()
+
     global callbacks
     global active_pins, num_active_pins
     active_pins = [PINS[cage-1] for cage in cages]
