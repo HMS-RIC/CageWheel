@@ -23,7 +23,7 @@ METERS_PER_REVOLUTION = 0.39 # measured diameter is ~0.124 m
 # setup for timing & logging
 loggingInterval_sec   = 10  # in seconds
 logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into 
-                            #            multiple files of this duration (or shorter)
+                            #            multiple files of this duration
 
 
 ######### DO NOT CHANGE VALUES BELOW THIS LINE #########
@@ -56,9 +56,9 @@ def cleanup():
     global callbacks
     for cb in callbacks:
         cb.cancel()
-    global pi
-    pi.stop()
-
+    if RUNNING_ON_PI:
+        global pi
+        pi.stop()
     # close log file
     closeAllLogs()
 
@@ -240,7 +240,7 @@ def startLogging(miceInfo):
     createLogFiles(miceInfo)
     # schedule the next log file chunk to occur <logFileDuration_hours> from now 
     logFileCount += 1
-    scheduler.enterabs(startTime + (logFileCount * logFileDuration_hours * 3600), 1, startLogging, (miceInfo)) 
+    scheduler.enterabs(startTime + (logFileCount * logFileDuration_hours * 3600), 1, startLogging, [miceInfo]) 
 
 logFiles = []
 def createLogFiles(miceInfo):
