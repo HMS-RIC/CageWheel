@@ -8,11 +8,13 @@ import datetime
 import os
 import re
 
+
+RUNNING_ON_PI = False
 try:
     import pigpio as gpio
     RUNNING_ON_PI = True
 except:
-    RUNNING_ON_PI = False
+    print('** Not running on RaspberyPi — faking inputs. **')    
 
 ######### USER MODIFIABLE PARAMETERS #########
 
@@ -81,6 +83,14 @@ def startGPIODaemon():
 
 # call this function to run the program!
 def runCageWheelMonitor():
+    # setup gpio pins
+    if RUNNING_ON_PI:
+        startGPIODaemon()
+        global pi
+        pi = gpio.pi()
+        setupPins()
+
+    # prompt user for mouse/cage info
     global samples
     global miceInfo, cages
     miceInfo, cages = getMiceInfo()
@@ -91,13 +101,6 @@ def runCageWheelMonitor():
     logCount = 0
     logFileCount = 0
     startLogging(miceInfo)
-
-    # setup gpio pins
-    if RUNNING_ON_PI:
-        startGPIODaemon()
-        global pi
-        pi = gpio.pi()
-        setupPins()
 
     global callbacks
     global active_pins, num_active_pins
