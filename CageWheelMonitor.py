@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# coding: utf-8
 
 import numpy as np
 import sched, time
@@ -14,7 +15,7 @@ try:
     import pigpio as gpio
     RUNNING_ON_PI = True
 except:
-    print('** Not running on RaspberyPi — faking inputs. **')    
+    print('** Not running on RaspberyPi — faking inputs. **')
 
 ######### USER MODIFIABLE PARAMETERS #########
 
@@ -24,7 +25,7 @@ METERS_PER_REVOLUTION = 0.39 # measured diameter is ~0.124 m
 
 # setup for timing & logging
 loggingInterval_sec   = 10  # in seconds
-logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into 
+logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into
                             #            multiple files of this duration
 
 
@@ -125,6 +126,7 @@ def runCageWheelMonitor():
     print('')
     print('Running...')
     print('')
+    print('Mouse speed in (rev/sec):')
 
     global scheduler
     scheduler.enterabs(startTime + loggingInterval_sec, 1, newLogEntry, ()) 
@@ -171,18 +173,23 @@ def newLogEntry():
 
     # print debug info to screen:
     global miceInfo
-    dt = datetime.datetime.now()
-    dateString = dt.strftime('%Y-%m-%d %H:%M:%S')
-    outputString = dateString
-    for n in xrange(num_active_pins):
-        mouse = miceInfo[n]
-        outputString += '  |  {} {:4.1f} rev/sec'.format(mouse['name'], revsPerSec[n])
 
+    # print header every 10 iterations
+    if ((logCount % 10) == 1):
+        dt = datetime.datetime.now()
+        # dateString = dt.strftime('%Y-%m-%d %H:%M:%S')
+        dateString = dt.strftime('%Y-%m-%d %H:%M')
+        print(dateString)
+        outputString = ''
+        for n in xrange(num_active_pins):
+            mouse = miceInfo[n]
+            outputString += '{:>8.8} |'.format(mouse['name'])
+        print(outputString)
+
+    outputString = ''
+    for n in xrange(num_active_pins):
+        outputString += '{:8.1f} |'.format(revsPerSec[n])
     print(outputString)
-    # print(logCount, map(str, activityPercent))
-    # print(prevSamples)
-    # print(time.time() - startTime)
-    # print(" ")
 
 
 ## functions for user input/setup        
