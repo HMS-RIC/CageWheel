@@ -1,4 +1,4 @@
-#!/usr/bin/python
+ #!/usr/bin/python
 # coding: utf-8
 
 import numpy as np
@@ -33,7 +33,7 @@ logFileDuration_hours = 24  # in hours;  experiment logs will be broken up into
 
 # setup for gpio
 GLITCH_FILTER = 100 # in us
-PINS = [4, 14, 15, 17, 18, 27, 22, 23, 24, 10, 9, 25, 11, 8, 7] 
+PINS = [4, 14, 15, 17, 18, 27, 22, 23, 24, 10, 9, 25, 11, 8, 7]
 MAX_NUM_CAGES = len(PINS)
 
 # setup for gpio
@@ -47,7 +47,7 @@ scheduler = sched.scheduler(time.time, time.sleep)
 
 def setupPins():
     # List of all usable GPIO pins aside from 2 or 3 as they are pulled up
-    global PINS, RUNNING_ON_PI, pi, MAX_NUM_CAGES 
+    global PINS, RUNNING_ON_PI, pi, MAX_NUM_CAGES
     if (RUNNING_ON_PI and (pi.get_hardware_revision() >= 16)):
         # more pins on later version of RasPi
         PINS = PINS + [5, 6, 12, 13, 19, 16, 26, 20, 21]
@@ -72,7 +72,7 @@ def sigint_handler(signal, frame):
 
 signal.signal(signal.SIGINT, sigint_handler)
 
-  
+
 def startGPIODaemon():
     if not RUNNING_ON_PI:
         return
@@ -129,7 +129,7 @@ def runCageWheelMonitor():
     print('Mouse speed in (rev/sec):')
 
     global scheduler
-    scheduler.enterabs(startTime + loggingInterval_sec, 1, newLogEntry, ()) 
+    scheduler.enterabs(startTime + loggingInterval_sec, 1, newLogEntry, ())
 
     # run until quit/^C
     scheduler.run()
@@ -142,14 +142,14 @@ def edgeCallback(channel, level, ticks):
 
 def newLogEntry():
     global samples
-    global startTime 
+    global startTime
     global logCount
     global prevLogTime
     global clicks
     global scheduler
 
     logCount += 1
-    scheduler.enterabs(startTime + (logCount+1)*loggingInterval_sec, 1, newLogEntry, ()) 
+    scheduler.enterabs(startTime + (logCount+1)*loggingInterval_sec, 1, newLogEntry, ())
 
     # compute inter-log interval
     currLogTime = time.time()
@@ -192,7 +192,7 @@ def newLogEntry():
     print(outputString)
 
 
-## functions for user input/setup        
+## functions for user input/setup
 
 def getMiceInfo():
     print("Mouse Running Wheel Monitor v1.0")
@@ -221,7 +221,7 @@ def getMiceInfo():
                 print("  ** Cage {} already in use. **".format(cage))
                 continue
             break
-        
+
         mouse = dict()
         mouse['name'] = name
         mouse['sex'] = sex
@@ -231,7 +231,7 @@ def getMiceInfo():
         cages.append(cage)
         if mouseNum < MAX_NUM_CAGES-1 :
             yn = '#'
-            while not (len(yn) == 0 or 
+            while not (len(yn) == 0 or
                         yn.startswith('Y') or
                         yn.startswith('y') or
                         yn.startswith('N') or
@@ -248,9 +248,9 @@ def getMiceInfo():
 def startLogging(miceInfo):
     global startTime, scheduler, logFileCount
     createLogFiles(miceInfo)
-    # schedule the next log file chunk to occur <logFileDuration_hours> from now 
+    # schedule the next log file chunk to occur <logFileDuration_hours> from now
     logFileCount += 1
-    scheduler.enterabs(startTime + (logFileCount * logFileDuration_hours * 3600), 1, startLogging, [miceInfo]) 
+    scheduler.enterabs(startTime + (logFileCount * logFileDuration_hours * 3600), 1, startLogging, [miceInfo])
 
 logFiles = []
 def createLogFiles(miceInfo):
@@ -275,20 +275,20 @@ def newLogFile(mouse, dateString, dir):
 
 def addHeaders(logFile, mouse, dt):
     # 1 NAME
-    logFile.write("{}\n".format(mouse['name']))
+    logFile.write("# Name: {}\n".format(mouse['name']))
     # 2 START DATE (dd-mon-yyyy), where the month uses stardard 3-letter
     # abbreviations (lower case)
-    logFile.write("{}\n".format(dt.strftime('%d-%b-%Y').lower()))
+    logFile.write("# Start date: {}\n".format(dt.strftime('%d-%b-%Y').lower()))
     # 3 START TIME (24 hour) Always 2 digits for both hour and minute, as in 04:20
-    logFile.write("{}\n".format(dt.strftime('%H:%M')))
+    logFile.write("# Start time: {}\n".format(dt.strftime('%H:%M')))
     # 4 INTERVAL (sample interval, or the time between data points, in sec)
-    logFile.write("{}\n".format(int(loggingInterval_sec)))
+    logFile.write("# Logging interval (sec): {}\n".format(int(loggingInterval_sec)))
     # 5 Any number (place holder) - cage number
-    logFile.write("cage-{}\n".format(mouse['cage']))
+    logFile.write("# Cage number: {}\n".format(mouse['cage']))
     # 6 Any number (place holder) - strain
-    logFile.write("{}\n".format(mouse['strain']))
+    logFile.write("# Strain: {}\n".format(mouse['strain']))
     # 7 Sex (also a place holder and ignored)
-    logFile.write("{}\n".format(mouse['sex']))
+    logFile.write("# Sex: {}\n".format(mouse['sex']))
 
 
 def closeAllLogs():
@@ -302,9 +302,9 @@ def logData(dataArray):
     for i in xrange(num_active_pins):
         logFile = logFiles[i]
         if np.isnan(dataArray[i]):
-            dataArray[i] = -1 
+            dataArray[i] = -1
         logFile.write('{:.2f}\n'.format(dataArray[i]))
-    
+
 
 
 
