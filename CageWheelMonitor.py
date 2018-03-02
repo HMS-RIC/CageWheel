@@ -80,6 +80,7 @@ def startGPIODaemon():
     ps_list = subprocess.check_output(["ps", "-aux"])
     if not re.search('pigpiod', ps_list):
         subprocess.call(["sudo", "/usr/bin/pigpiod"])
+        time.sleep(3)    # pause 3 seconds to make sure daemon is running
 
 
 # call this function to run the program!
