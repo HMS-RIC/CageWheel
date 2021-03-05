@@ -22,4 +22,4 @@ A RaspberryPi-based system for monitoring running wheels in up to 24 mouse cages
 
 You should be good to go!
 
-![](/Photos/Running Wheel System.jpg)
+![](Photos/Running Wheel System.jpg)
